@@ -128,6 +128,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   /// 构建列表
   ListView _buildList() {
     return ListView.builder(
+      padding: EdgeInsets.zero,
       physics: widget.physics,
       itemCount: widget.delegate.numberOfSectionsInTableView(),
       itemBuilder: _buildSection,
@@ -152,6 +153,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
           child: singleRowSection
               ? _buildCell(context, IndexPath(section: section, row: 0))
               : ListView.separated(
+                  padding: EdgeInsets.zero,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: numberOfRowInSection,
