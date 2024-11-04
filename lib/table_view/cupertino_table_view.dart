@@ -78,7 +78,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
       return Container(
         color: widget.backgroundColor,
         margin: widget.margin,
-        padding: widget.padding,
+        // padding: widget.padding,
         child: list,
       );
     }
@@ -110,7 +110,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
               child: Container(
                 color: widget.backgroundColor,
                 margin: widget.margin,
-                padding: widget.padding,
+                // padding: widget.padding,
                 child: CustomScrollView(
                   key: widget.key,
                   physics: widget.physics,
@@ -128,7 +128,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   /// 构建列表
   ListView _buildList() {
     return ListView.builder(
-      padding: EdgeInsets.zero,
+      padding: widget.padding,
       physics: widget.physics,
       itemCount: widget.delegate.numberOfSectionsInTableView(),
       itemBuilder: _buildSection,
@@ -138,9 +138,9 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   /// 构建单个section
   Widget _buildSection(BuildContext context, int section) {
     int numberOfRowInSection = widget.delegate.numberOfRowsInSection?.call(section) ?? 0;
-    if (numberOfRowInSection == 0) {
-      return const SizedBox.shrink();
-    }
+    // if (numberOfRowInSection == 0) {
+    //   return const SizedBox.shrink();
+    // }
     BoxDecoration? decoration = widget.delegate.decorationForSection?.call(context, section);
     bool singleRowSection = numberOfRowInSection == 1;
     return Column(
