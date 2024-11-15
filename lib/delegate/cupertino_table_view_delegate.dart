@@ -16,6 +16,7 @@ typedef DecorationForSection = BoxDecoration? Function(
   BuildContext context,
   int section,
 );
+typedef MarginForSection = EdgeInsets? Function(int section);
 typedef SelectRowAtIndexPath = void Function(IndexPath indexPath);
 typedef CanSelectRowAtIndexPath = bool Function(IndexPath indexPath);
 typedef DividerInTableView = Widget Function(BuildContext context);
@@ -43,7 +44,7 @@ class CupertinoTableViewDelegate {
   WidgetInSection? headerInSection;
   WidgetInSection? footerInSection;
   DecorationForSection? decorationForSection;
-  EdgeInsets? marginForSection;
+  MarginForSection? marginForSection;
   CanSelectRowAtIndexPath? canSelectRowAtIndexPath;
   SelectRowAtIndexPath? didSelectRowAtIndexPath;
   HitTestBehavior? hitBehaviorAtIndexPath;

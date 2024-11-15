@@ -148,7 +148,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
         _buildHeaderInSection(context, section),
         Container(
           clipBehavior: decoration == null ? Clip.none : Clip.hardEdge,
-          margin: widget.delegate.marginForSection,
+          margin: widget.delegate.marginForSection?.call(section),
           decoration: decoration,
           child: singleRowSection
               ? _buildCell(context, IndexPath(section: section, row: 0))
