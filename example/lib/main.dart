@@ -1,4 +1,5 @@
 import 'package:cupertino_table_view/cupertino_table_view.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const MyApp());
@@ -8,12 +9,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const CupertinoApp(
       title: 'Cupertino Table View Demo',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: Scaffold(
-          appBar: AppBar(title: const Text('CupertinoTableView')),
-          body: CupertinoTableViewDemo()),
+      home: CupertinoPageScaffold(
+          navigationBar: CupertinoNavigationBar(middle: Text('CupertinoTableView')),
+          child: SafeArea(child: CupertinoScrollbar(child: CupertinoTableViewDemo()))),
     );
   }
 }
@@ -41,9 +41,10 @@ class _CupertinoTableViewDemoState extends State<CupertinoTableViewDemo> {
   @override
   Widget build(BuildContext context) {
     return CupertinoTableView(
+      primaryScrollController: true,
       delegate: tableViewDelegate,
       backgroundColor: Colors.black12,
-      padding: EdgeInsets.only(left: 15, right: 15),
+      padding: const EdgeInsets.only(left: 15, right: 15),
       refreshConfig: refreshConfig, //如果不想使用刷新能力，refreshConfig可以不传
     );
   }

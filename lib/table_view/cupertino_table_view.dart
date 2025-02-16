@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 
 import '../../delegate/cupertino_table_view_delegate.dart';
 import '../../index_path/index_path.dart';
@@ -19,6 +22,7 @@ class CupertinoTableView extends StatefulWidget {
     this.physics = const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
     this.refreshConfig,
     this.scrollController,
+    this.primaryScrollController,
   });
 
   final CupertinoTableViewDelegate delegate;
@@ -28,6 +32,7 @@ class CupertinoTableView extends StatefulWidget {
   final ScrollPhysics? physics;
   final RefreshConfig? refreshConfig;
   final ScrollController? scrollController;
+  final bool? primaryScrollController;
 
   @override
   State<CupertinoTableView> createState() => _CupertinoTableViewState();
@@ -43,7 +48,8 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   /// 如果外部没有传scrollController，那么会使用_fallbackScrollController
   ScrollController? _fallbackScrollController;
 
-  ScrollController get _effectiveScrollController => widget.scrollController ?? _fallbackScrollController!;
+  ScrollController get _effectiveScrollController =>
+      widget.scrollController ?? _fallbackScrollController ?? PrimaryScrollController.maybeOf(context)!;
 
   @override
   void initState() {
@@ -112,9 +118,10 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
                 margin: widget.margin,
                 // padding: widget.padding,
                 child: CustomScrollView(
+                  primary: widget.primaryScrollController,
                   key: widget.key,
                   physics: widget.physics,
-                  controller: _effectiveScrollController,
+                  controller: (widget.primaryScrollController ?? false) ? null : _effectiveScrollController,
                   slivers: slivers,
                 ),
               ),
@@ -241,7 +248,9 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   /// 初始化ScrollController
   void _initScrollController() {
     if (widget.scrollController == null) {
-      _fallbackScrollController = ScrollController();
+      if (!(widget.primaryScrollController ?? false)) {
+        _fallbackScrollController = ScrollController();
+      }
     }
   }
 
@@ -300,6 +309,12 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
     widget.refreshConfig!.onRefreshHeaderStatusChange?.call(controller, status);
     switch (status) {
       case RefreshStatus.refreshing:
+        if (Platform.isIOS) {
+          HapticFeedback.mediumImpact();
+        } else {
+          HapticFeedback.vibrate();
+        }
+
         RefreshIndicatorConfig config = widget.refreshConfig!.headerConfig;
         jumpTo(currentOffset + config.visibleRange);
         break;
@@ -318,6 +333,17 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
     RefreshStatus status,
   ) {
     widget.refreshConfig!.onRefreshFooterStatusChange?.call(controller, status);
+    switch (status) {
+      case RefreshStatus.refreshing:
+        if (Platform.isIOS) {
+          HapticFeedback.mediumImpact();
+        } else {
+          HapticFeedback.vibrate();
+        }
+        break;
+      default:
+        break;
+    }
   }
 
   /// 计算refresh header和refresh footer的高度
