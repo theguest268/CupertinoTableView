@@ -248,7 +248,11 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   /// 初始化ScrollController
   void _initScrollController() {
     if (widget.scrollController == null) {
-      if (!(widget.primaryScrollController ?? false)) {
+      if ((widget.primaryScrollController ?? false)) {
+        if (PrimaryScrollController.maybeOf(context) == null) {
+          _fallbackScrollController = ScrollController();
+        }
+      } else {
         _fallbackScrollController = ScrollController();
       }
     }
