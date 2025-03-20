@@ -43,6 +43,9 @@ class _CupertinoTableViewCellState extends State<CupertinoTableViewCell> with Si
   @override
   void didUpdateWidget(covariant CupertinoTableViewCell oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.onTap != widget.onTap) {
+      _setUpAnimation();
+    }
     _setTween();
   }
 
@@ -59,12 +62,14 @@ class _CupertinoTableViewCellState extends State<CupertinoTableViewCell> with Si
       return;
     }
 
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      value: 0.0,
-      vsync: this,
-    );
-    _opacityAnimation = _animationController?.drive(CurveTween(curve: Curves.decelerate)).drive(_opacityTween);
+    if (_animationController == null) {
+      _animationController = AnimationController(
+        duration: const Duration(milliseconds: 200),
+        value: 0.0,
+        vsync: this,
+      );
+      _opacityAnimation = _animationController!.drive(CurveTween(curve: Curves.decelerate)).drive(_opacityTween);
+    }
   }
 
   void _setTween() {
