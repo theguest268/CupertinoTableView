@@ -23,6 +23,7 @@ class CupertinoTableView extends StatefulWidget {
     this.refreshConfig,
     this.scrollController,
     this.primaryScrollController,
+    this.isOnlyScroll = false,
   });
 
   final CupertinoTableViewDelegate delegate;
@@ -33,6 +34,8 @@ class CupertinoTableView extends StatefulWidget {
   final RefreshConfig? refreshConfig;
   final ScrollController? scrollController;
   final bool? primaryScrollController;
+
+  final bool isOnlyScroll;
 
   @override
   State<CupertinoTableView> createState() => _CupertinoTableViewState();
@@ -80,7 +83,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   @override
   Widget build(BuildContext context) {
     ListView list = _buildList();
-    if (!enableRefresh) {
+    if (!enableRefresh && !widget.isOnlyScroll) {
       return Container(
         color: widget.backgroundColor,
         margin: widget.margin,
@@ -89,26 +92,29 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
       );
     }
 
-    RefreshConfig refreshConfig = widget.refreshConfig!;
+    RefreshConfig? refreshConfig;
     List<Widget> slivers = List.from(list.buildSlivers(context));
-    if (refreshConfig.enablePullUp) {
-      slivers.add(
-        SliverToBoxAdapter(child: _buildRefreshFooter(refreshConfig)),
-      );
-    }
-    if (refreshConfig.enablePullDown) {
-      slivers.insert(
-        0,
-        SliverToBoxAdapter(child: _buildRefreshHeader(refreshConfig)),
-      );
+    if (widget.refreshConfig != null) {
+      refreshConfig = widget.refreshConfig!;
+      if (refreshConfig.enablePullUp) {
+        slivers.add(
+          SliverToBoxAdapter(child: _buildRefreshFooter(refreshConfig)),
+        );
+      }
+      if (refreshConfig.enablePullDown) {
+        slivers.insert(
+          0,
+          SliverToBoxAdapter(child: _buildRefreshHeader(refreshConfig)),
+        );
+      }
     }
 
     return LayoutBuilder(builder: (context, constraints) {
       return Stack(
         children: <Widget>[
           Positioned(
-            top: refreshConfig.enablePullDown ? -_headerHeight : 0,
-            bottom: refreshConfig.enablePullUp ? -_footerHeight : 0,
+            top: (refreshConfig?.enablePullDown ?? false) ? -_headerHeight : 0,
+            bottom: ((refreshConfig?.enablePullUp ?? false) || widget.isOnlyScroll) ? -_footerHeight : 0,
             left: 0,
             right: 0,
             child: NotificationListener(
