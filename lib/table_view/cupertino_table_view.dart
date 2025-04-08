@@ -23,7 +23,6 @@ class CupertinoTableView extends StatefulWidget {
     this.refreshConfig,
     this.scrollController,
     this.primaryScrollController,
-    this.isOnlyScroll = false,
   });
 
   final CupertinoTableViewDelegate delegate;
@@ -34,8 +33,6 @@ class CupertinoTableView extends StatefulWidget {
   final RefreshConfig? refreshConfig;
   final ScrollController? scrollController;
   final bool? primaryScrollController;
-
-  final bool isOnlyScroll;
 
   @override
   State<CupertinoTableView> createState() => _CupertinoTableViewState();
@@ -84,7 +81,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   Widget build(BuildContext context) {
     ListView list = _buildList();
 
-    if (widget.isOnlyScroll) {
+    if (widget.scrollController != null) {
       return Container(
         color: widget.backgroundColor,
         margin: widget.margin,
