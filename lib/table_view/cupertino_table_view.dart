@@ -23,6 +23,7 @@ class CupertinoTableView extends StatefulWidget {
     this.refreshConfig,
     this.scrollController,
     this.primaryScrollController,
+    this.onScroll,
   });
 
   final CupertinoTableViewDelegate delegate;
@@ -33,6 +34,7 @@ class CupertinoTableView extends StatefulWidget {
   final RefreshConfig? refreshConfig;
   final ScrollController? scrollController;
   final bool? primaryScrollController;
+  final ValueChanged<ScrollController>? onScroll;
 
   @override
   State<CupertinoTableView> createState() => _CupertinoTableViewState();
@@ -80,22 +82,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   @override
   Widget build(BuildContext context) {
     ListView list = _buildList();
-
-    if (widget.scrollController != null) {
-      return Container(
-        color: widget.backgroundColor,
-        margin: widget.margin,
-        child: CustomScrollView(
-          primary: widget.primaryScrollController,
-          key: widget.key,
-          physics: widget.physics,
-          controller: (widget.primaryScrollController ?? false) ? null : _effectiveScrollController,
-          slivers: List.from(list.buildSlivers(context)),
-        ),
-      );
-    }
-
-    if (!enableRefresh) {
+    if (!enableRefresh && widget.onScroll == null) {
       return Container(
         color: widget.backgroundColor,
         margin: widget.margin,
@@ -104,26 +91,29 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
       );
     }
 
-    RefreshConfig refreshConfig = widget.refreshConfig!;
     List<Widget> slivers = List.from(list.buildSlivers(context));
-    if (refreshConfig.enablePullUp) {
-      slivers.add(
-        SliverToBoxAdapter(child: _buildRefreshFooter(refreshConfig)),
-      );
-    }
-    if (refreshConfig.enablePullDown) {
-      slivers.insert(
-        0,
-        SliverToBoxAdapter(child: _buildRefreshHeader(refreshConfig)),
-      );
+
+    RefreshConfig? refreshConfig = widget.refreshConfig;
+    if (refreshConfig != null) {
+      if (refreshConfig.enablePullUp) {
+        slivers.add(
+          SliverToBoxAdapter(child: _buildRefreshFooter(refreshConfig)),
+        );
+      }
+      if (refreshConfig.enablePullDown) {
+        slivers.insert(
+          0,
+          SliverToBoxAdapter(child: _buildRefreshHeader(refreshConfig)),
+        );
+      }
     }
 
     return LayoutBuilder(builder: (context, constraints) {
       return Stack(
         children: <Widget>[
           Positioned(
-            top: refreshConfig.enablePullDown ? -_headerHeight : 0,
-            bottom: refreshConfig.enablePullUp ? -_footerHeight : 0,
+            top: (refreshConfig?.enablePullDown ?? false) ? -_headerHeight : 0,
+            bottom: (refreshConfig?.enablePullUp ?? false) ? -_footerHeight : 0,
             left: 0,
             right: 0,
             child: NotificationListener(
@@ -489,6 +479,8 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
 
   /// 分发滚动事件
   bool _dispatchScrollEvent(ScrollNotification notification) {
+    widget.onScroll?.call(_effectiveScrollController);
+
     if (notification.metrics.axis == Axis.horizontal) {
       return false;
     }
