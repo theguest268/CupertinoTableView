@@ -82,7 +82,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   @override
   Widget build(BuildContext context) {
     ListView list = _buildList();
-    if (!enableRefresh && widget.onScroll == null) {
+    if (!enableRefresh && widget.onScroll == null && widget.scrollController == null) {
       return Container(
         color: widget.backgroundColor,
         margin: widget.margin,
