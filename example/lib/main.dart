@@ -91,16 +91,16 @@ class _CupertinoTableViewDemoState extends State<CupertinoTableViewDemo> {
   /// 创建refreshConfig
   RefreshConfig generateRefreshConfig() {
     return RefreshConfig(
-      refreshHeaderBuilder: (context, status) {
+      refreshHeaderBuilder: (context, status, offset) {
         return DefaultRefreshIndicator(
           text: 'header ${textFromStatus(status)}',
-          icon: iconFromStatus(status),
+          icon: iconFromStatus(status, offset),
         );
       },
-      refreshFooterBuilder: (context, status) {
+      refreshFooterBuilder: (context, status, offset) {
         return DefaultRefreshIndicator(
           text: 'footer ${textFromStatus(status)}',
-          icon: iconFromStatus(status),
+          icon: iconFromStatus(status, offset),
         );
       },
       onRefreshHeaderStatusChange: (controller, status) {
@@ -141,7 +141,7 @@ class _CupertinoTableViewDemoState extends State<CupertinoTableViewDemo> {
     }
   }
 
-  Widget iconFromStatus(RefreshStatus status) {
+  Widget iconFromStatus(RefreshStatus status, double offset) {
     switch (status) {
       case RefreshStatus.idle:
         return const Icon(Icons.arrow_upward, color: Colors.grey);

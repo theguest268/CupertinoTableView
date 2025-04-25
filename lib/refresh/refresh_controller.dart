@@ -6,8 +6,9 @@ import 'refresh_config.dart';
 class RefreshController {
   RefreshController();
 
-  final ValueNotifier<RefreshStatus> _headerStatus =
-      ValueNotifier(RefreshStatus.idle);
+  final ValueNotifier<RefreshStatus> _headerStatus = ValueNotifier(RefreshStatus.idle);
+
+  final ValueNotifier<double> _headerOffset = ValueNotifier(0.0);
 
   /// refreshHeader的状态
   RefreshStatus get refreshHeaderStatus => _headerStatus.value;
@@ -19,8 +20,17 @@ class RefreshController {
     }
   }
 
-  final ValueNotifier<RefreshStatus> _footerStatus =
-      ValueNotifier(RefreshStatus.idle);
+  double get refreshHeaderOffset => _headerOffset.value;
+
+  set refreshHeaderOffset(double newValue) {
+    if (_headerOffset.value != newValue) {
+      _headerOffset.value = newValue;
+    }
+  }
+
+  final ValueNotifier<RefreshStatus> _footerStatus = ValueNotifier(RefreshStatus.idle);
+
+  final ValueNotifier<double> _footerOffset = ValueNotifier(0.0);
 
   /// refreshFooter的状态
   RefreshStatus get refreshFooterStatus => _footerStatus.value;
@@ -32,32 +42,42 @@ class RefreshController {
     }
   }
 
+  double get refreshFooterOffset => _footerOffset.value;
+
+  set refreshFooterOffset(double newValue) {
+    if (_footerOffset.value != newValue) {
+      _footerOffset.value = newValue;
+    }
+  }
+
   /// header是否出现refreshing状态中
-  bool get isHeaderRefreshing =>
-      refreshHeaderStatus == RefreshStatus.refreshing;
+  bool get isHeaderRefreshing => refreshHeaderStatus == RefreshStatus.refreshing;
 
   /// footer是否出现refreshing状态中
-  bool get isFooterRefreshing =>
-      refreshFooterStatus == RefreshStatus.refreshing;
+  bool get isFooterRefreshing => refreshFooterStatus == RefreshStatus.refreshing;
 
   /// 向header中增加一个listener。想要监听下拉动作的可以调用。
   void addHeaderListener(VoidCallback listener) {
     _headerStatus.addListener(listener);
+    _headerOffset.addListener(listener);
   }
 
   /// 向footer中增加一个listener。想要监听下拉动作的可以调用。
   void addFooterListener(VoidCallback listener) {
     _footerStatus.addListener(listener);
+    _footerOffset.addListener(listener);
   }
 
   /// 移除header listener
   void removeHeaderListener(VoidCallback listener) {
     _headerStatus.removeListener(listener);
+    _headerOffset.removeListener(listener);
   }
 
   /// 移除footer listener
   void removeFooterListener(VoidCallback listener) {
     _footerStatus.removeListener(listener);
+    _footerOffset.removeListener(listener);
   }
 
   /// dispose方法会在tableView dispose时被调用
@@ -65,5 +85,7 @@ class RefreshController {
   void dispose() {
     _headerStatus.dispose();
     _footerStatus.dispose();
+    _headerOffset.dispose();
+    _footerOffset.dispose();
   }
 }
