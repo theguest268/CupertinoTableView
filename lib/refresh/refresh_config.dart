@@ -12,15 +12,16 @@ enum RefreshStatus {
 
 /// 刷新组件创建
 typedef RefreshIndicatorBuilder = Widget Function(
-    BuildContext context,
-    RefreshStatus status,
-    );
+  BuildContext context,
+  RefreshStatus status,
+  double offset,
+);
 
 /// 刷新状态回调
 typedef RefreshStatusDidChange = void Function(
-    RefreshController controller,
-    RefreshStatus status,
-    );
+  RefreshController controller,
+  RefreshStatus status,
+);
 
 /// tableView刷新控制类
 class RefreshConfig {
@@ -33,7 +34,6 @@ class RefreshConfig {
   bool enablePullUp;
   bool enablePullDown;
   RefreshController controller;
-  Function(double offset, bool isHeader)? onOffsetRefreshChanged;
 
   RefreshConfig({
     this.enablePullUp = true,
@@ -45,7 +45,6 @@ class RefreshConfig {
     this.footerConfig = const RefreshIndicatorConfig(),
     this.onRefreshFooterStatusChange,
     RefreshController? controller,
-    this.onOffsetRefreshChanged,
   }) : controller = controller ?? RefreshController();
 
   bool disposed = false;

@@ -233,7 +233,6 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
       refreshController: config.controller,
       indicatorBuilder: config.refreshHeaderBuilder!,
       config: config.headerConfig,
-      onOffsetRefreshChanged: (offset) => config.onOffsetRefreshChanged?.call(offset, true),
     );
   }
 
@@ -248,7 +247,6 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
       refreshController: config.controller,
       indicatorBuilder: config.refreshFooterBuilder!,
       config: config.footerConfig,
-      onOffsetRefreshChanged: (offset) => config.onOffsetRefreshChanged?.call(offset, false),
     );
   }
 

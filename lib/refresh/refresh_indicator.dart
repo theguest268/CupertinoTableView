@@ -66,12 +66,14 @@ abstract class _RefreshIndicator extends StatefulWidget {
 
   final RefreshIndicatorConfig config;
 
-  final Function(double offset)? onOffsetRefreshChanged;
-
   RefreshStatus get status;
 
   /// 刷新状态
   set status(RefreshStatus status);
+
+  double get offset;
+
+  set offset(double offset);
 
   /// 是否处在刷新中
   bool get isRefreshing => status == RefreshStatus.refreshing;
@@ -84,7 +86,6 @@ abstract class _RefreshIndicator extends StatefulWidget {
     required this.refreshController,
     required this.indicatorBuilder,
     required this.config,
-    this.onOffsetRefreshChanged,
   });
 }
 
@@ -156,7 +157,7 @@ abstract class _RefreshIndicatorState<T extends _RefreshIndicator> extends State
     }
 
     double offset = _measureOffset(notification);
-    widget.onOffsetRefreshChanged?.call(offset);
+    widget.offset = offset;
     if (offset >= 1.0) {
       widget.status = RefreshStatus.prepared;
     } else {
@@ -175,6 +176,7 @@ abstract class _RefreshIndicatorState<T extends _RefreshIndicator> extends State
     bool max = _measureOffset(notification) >= 1.0;
     if (!max) {
       _animationController.animateTo(0);
+      widget.offset = 0.0;
     } else {
       widget.status = RefreshStatus.refreshing;
     }
@@ -192,7 +194,6 @@ class RefreshHeader extends _RefreshIndicator {
     required super.refreshController,
     required super.indicatorBuilder,
     required super.config,
-    super.onOffsetRefreshChanged,
   });
 
   @override
@@ -204,8 +205,13 @@ class RefreshHeader extends _RefreshIndicator {
   RefreshStatus get status => refreshController.refreshHeaderStatus;
 
   @override
-  set status(RefreshStatus newValue) =>
-      refreshController.refreshHeaderStatus = newValue;
+  set status(RefreshStatus newValue) => refreshController.refreshHeaderStatus = newValue;
+
+  @override
+  double get offset => refreshController.refreshHeaderOffset;
+
+  @override
+  set offset(double newValue) => refreshController.refreshHeaderOffset = newValue;
 }
 
 class _RefreshHeaderState extends _RefreshIndicatorState<RefreshHeader> {
@@ -217,7 +223,7 @@ class _RefreshHeaderState extends _RefreshIndicatorState<RefreshHeader> {
           sizeFactor: _animationController,
           child: Container(height: widget.config.visibleRange),
         ),
-        widget.indicatorBuilder(context, widget.status),
+        widget.indicatorBuilder(context, widget.status, widget.offset),
       ],
     );
   }
@@ -242,7 +248,6 @@ class RefreshFooter extends _RefreshIndicator {
     required super.refreshController,
     required super.indicatorBuilder,
     required super.config,
-    super.onOffsetRefreshChanged,
   });
 
   @override
@@ -254,8 +259,13 @@ class RefreshFooter extends _RefreshIndicator {
   RefreshStatus get status => refreshController.refreshFooterStatus;
 
   @override
-  set status(RefreshStatus newValue) =>
-      refreshController.refreshFooterStatus = newValue;
+  set status(RefreshStatus newValue) => refreshController.refreshFooterStatus = newValue;
+
+  @override
+  double get offset => refreshController.refreshFooterOffset;
+
+  @override
+  set offset(double newValue) => refreshController.refreshFooterOffset = newValue;
 }
 
 class _RefreshFooterState extends _RefreshIndicatorState<RefreshFooter> {
@@ -263,7 +273,7 @@ class _RefreshFooterState extends _RefreshIndicatorState<RefreshFooter> {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        widget.indicatorBuilder(context, widget.status),
+        widget.indicatorBuilder(context, widget.status, widget.offset),
         SizeTransition(
           sizeFactor: _animationController,
           child: Container(height: widget.config.visibleRange),
