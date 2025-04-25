@@ -123,8 +123,8 @@ class _CupertinoTableViewDemoState extends State<CupertinoTableViewDemo> {
           });
         }
       },
-      onOffsetRefreshChanged: (offset) {
-        print('offset change: $offset');
+      onOffsetRefreshChanged: (offset, isHeader) {
+        print('offset change: $offset isHeader: $isHeader');
       },
     );
   }

@@ -33,7 +33,7 @@ class RefreshConfig {
   bool enablePullUp;
   bool enablePullDown;
   RefreshController controller;
-  Function(double offset)? onOffsetRefreshChanged;
+  Function(double offset, bool isHeader)? onOffsetRefreshChanged;
 
   RefreshConfig({
     this.enablePullUp = true,

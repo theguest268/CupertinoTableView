@@ -242,6 +242,7 @@ class RefreshFooter extends _RefreshIndicator {
     required super.refreshController,
     required super.indicatorBuilder,
     required super.config,
+    super.onOffsetRefreshChanged,
   });
 
   @override
