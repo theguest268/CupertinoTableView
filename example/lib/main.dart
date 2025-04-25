@@ -123,6 +123,9 @@ class _CupertinoTableViewDemoState extends State<CupertinoTableViewDemo> {
           });
         }
       },
+      onOffsetRefreshChanged: (offset) {
+        print('offset change: $offset');
+      },
     );
   }
 

@@ -233,6 +233,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
       refreshController: config.controller,
       indicatorBuilder: config.refreshHeaderBuilder!,
       config: config.headerConfig,
+      onOffsetRefreshChanged: config.onOffsetRefreshChanged,
     );
   }
 

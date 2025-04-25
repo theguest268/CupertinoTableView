@@ -66,6 +66,8 @@ abstract class _RefreshIndicator extends StatefulWidget {
 
   final RefreshIndicatorConfig config;
 
+  final Function(double offset)? onOffsetRefreshChanged;
+
   RefreshStatus get status;
 
   /// 刷新状态
@@ -82,6 +84,7 @@ abstract class _RefreshIndicator extends StatefulWidget {
     required this.refreshController,
     required this.indicatorBuilder,
     required this.config,
+    this.onOffsetRefreshChanged,
   });
 }
 
@@ -153,6 +156,7 @@ abstract class _RefreshIndicatorState<T extends _RefreshIndicator> extends State
     }
 
     double offset = _measureOffset(notification);
+    widget.onOffsetRefreshChanged?.call(offset);
     if (offset >= 1.0) {
       widget.status = RefreshStatus.prepared;
     } else {
@@ -188,6 +192,7 @@ class RefreshHeader extends _RefreshIndicator {
     required super.refreshController,
     required super.indicatorBuilder,
     required super.config,
+    super.onOffsetRefreshChanged,
   });
 
   @override

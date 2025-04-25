@@ -33,6 +33,7 @@ class RefreshConfig {
   bool enablePullUp;
   bool enablePullDown;
   RefreshController controller;
+  Function(double offset)? onOffsetRefreshChanged;
 
   RefreshConfig({
     this.enablePullUp = true,
@@ -44,6 +45,7 @@ class RefreshConfig {
     this.footerConfig = const RefreshIndicatorConfig(),
     this.onRefreshFooterStatusChange,
     RefreshController? controller,
+    this.onOffsetRefreshChanged,
   }) : controller = controller ?? RefreshController();
 
   bool disposed = false;
