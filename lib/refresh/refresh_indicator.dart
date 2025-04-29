@@ -36,7 +36,7 @@ class DefaultRefreshIndicator extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           textWidget,
-          const SizedBox(width: 15),
+          if (text?.isNotEmpty ?? false) const SizedBox(width: 15),
           iconWidget,
         ],
       ),
