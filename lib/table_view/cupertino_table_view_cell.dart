@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 
-/// TableViewCell类
 class CupertinoTableViewCell extends StatefulWidget {
   const CupertinoTableViewCell({
     super.key,
@@ -8,78 +7,120 @@ class CupertinoTableViewCell extends StatefulWidget {
     this.pressedOpacity,
     this.hitBehavior,
     this.onTap,
+    this.pressedColor = const Color(0x00000000),
   });
 
-  final double? pressedOpacity;
   final WidgetBuilder builder;
   final HitTestBehavior? hitBehavior;
   final VoidCallback? onTap;
+  final double? pressedOpacity;
+  final Color pressedColor;
 
   @override
   State<CupertinoTableViewCell> createState() => _CupertinoTableViewCellState();
 }
 
-class _CupertinoTableViewCellState extends State<CupertinoTableViewCell> with SingleTickerProviderStateMixin {
-  /// pressed动画时长
-  static const Duration kFadeOutDuration = Duration(milliseconds: 120);
+class _CupertinoTableViewCellState extends State<CupertinoTableViewCell> with TickerProviderStateMixin {
+  static const Duration _fadeOutDuration = Duration(milliseconds: 120);
+  static const Duration _fadeInDuration = Duration(milliseconds: 180);
 
-  /// pressed动画时长
-  static const Duration kFadeInDuration = Duration(milliseconds: 180);
-
-  /// pressed动画opacity值
   final Tween<double> _opacityTween = Tween<double>(begin: 1.0);
 
-  AnimationController? _animationController;
+  AnimationController? _opacityController;
   Animation<double>? _opacityAnimation;
+
+  AnimationController? _colorController;
+  Animation<Color?>? _colorAnimation;
+
+  bool _cellHeldDown = false;
+  bool _enablePressedAnimation = false;
 
   @override
   void initState() {
     super.initState();
-
-    _setUpAnimation();
-    _setTween();
+    _initAnimations();
   }
 
   @override
   void didUpdateWidget(covariant CupertinoTableViewCell oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.onTap != widget.onTap) {
-      _setUpAnimation();
+      _initAnimations();
     }
-    _setTween();
   }
 
-  /// 初始化动画
-  void _setUpAnimation() {
-    if (widget.onTap == null) {
-      enablePressedAnimation = false;
+  void _initAnimations() {
+    final pressedOpacity = widget.pressedOpacity ?? 0.0;
+    _enablePressedAnimation = widget.onTap != null && (pressedOpacity) < 1 && (pressedOpacity) > 0;
+
+    if (_enablePressedAnimation) {
+      _opacityTween.end = pressedOpacity;
+      if (_opacityController == null) {
+        _opacityController = AnimationController(
+          duration: const Duration(milliseconds: 200),
+          value: 0.0,
+          vsync: this,
+        );
+        _opacityAnimation = _opacityController!.drive(CurveTween(curve: Curves.decelerate)).drive(_opacityTween);
+      }
+
+      if (_colorController == null) {
+        _colorController = AnimationController(
+          duration: const Duration(milliseconds: 150),
+          vsync: this,
+        );
+        _colorAnimation = ColorTween(
+          begin: const Color(0x00000000),
+          end: widget.pressedColor,
+        ).animate(_colorController!);
+      }
+    }
+  }
+
+  void _handleTapDown(TapDownDetails _) {
+    if (!_cellHeldDown) {
+      _cellHeldDown = true;
+      _animateOpacity();
+      _animateColor();
+    }
+  }
+
+  void _handleTapUp(TapUpDetails _) {
+    if (_cellHeldDown) {
+      _cellHeldDown = false;
+      _animateOpacity();
+      _animateColor();
+    }
+  }
+
+  void _handleTapCancel() {
+    if (_cellHeldDown) {
+      _cellHeldDown = false;
+      _animateOpacity();
+      _animateColor();
+    }
+  }
+
+  void _animateOpacity() {
+    if ((_opacityController?.isAnimating ?? true) || !_enablePressedAnimation) return;
+    final wasHeldDown = _cellHeldDown;
+    final TickerFuture ticker = _cellHeldDown
+        ? _opacityController!.animateTo(1.0, duration: _fadeOutDuration, curve: Curves.easeInOutCubicEmphasized)
+        : _opacityController!.animateTo(0.0, duration: _fadeInDuration, curve: Curves.easeOutCubic);
+    ticker.then<void>((_) {
+      if (mounted && wasHeldDown != _cellHeldDown) {
+        _animateOpacity();
+      }
+    });
+  }
+
+  void _animateColor() {
+    if (_colorController == null || !_enablePressedAnimation) return;
+    if (_cellHeldDown) {
+      _colorController!.forward();
     } else {
-      double pressedOpacity = widget.pressedOpacity ?? 0;
-      enablePressedAnimation = pressedOpacity < 1 && pressedOpacity > 0;
+      _colorController!.reverse();
     }
-
-    if (!enablePressedAnimation) {
-      return;
-    }
-
-    if (_animationController == null) {
-      _animationController = AnimationController(
-        duration: const Duration(milliseconds: 200),
-        value: 0.0,
-        vsync: this,
-      );
-      _opacityAnimation = _animationController!.drive(CurveTween(curve: Curves.decelerate)).drive(_opacityTween);
-    }
-  }
-
-  void _setTween() {
-    _opacityTween.end = widget.pressedOpacity ?? 1.0;
-  }
-
-  @override
-  void dispose() {
-    _animationController?.dispose();
-    super.dispose();
   }
 
   @override
@@ -90,61 +131,26 @@ class _CupertinoTableViewCellState extends State<CupertinoTableViewCell> with Si
     return GestureDetector(
       behavior: widget.hitBehavior ?? HitTestBehavior.opaque,
       onTap: widget.onTap,
-      onTapDown: enablePressedAnimation ? _handleTapDown : null,
-      onTapUp: enablePressedAnimation ? _handleTapUp : null,
-      onTapCancel: enablePressedAnimation ? _handleTapCancel : null,
-      child: enablePressedAnimation
-          ? FadeTransition(
-              opacity: _opacityAnimation!,
+      onTapDown: _enablePressedAnimation ? _handleTapDown : null,
+      onTapUp: _enablePressedAnimation ? _handleTapUp : null,
+      onTapCancel: _enablePressedAnimation ? _handleTapCancel : null,
+      child: _enablePressedAnimation && _opacityAnimation != null
+          ? AnimatedBuilder(
+              animation: Listenable.merge([_colorAnimation, _opacityAnimation]),
+              builder: (_, child) => Container(
+                color: _colorAnimation?.value,
+                child: Opacity(opacity: _opacityAnimation!.value, child: child),
+              ),
               child: widget.builder(context),
             )
           : widget.builder(context),
     );
   }
 
-  /// cell是否被按下去了
-  bool _cellHeldDown = false;
-
-  /// 是否应用pressed动画
-  bool enablePressedAnimation = false;
-
-  /// 处理TapDown
-  void _handleTapDown(TapDownDetails event) {
-    if (!_cellHeldDown) {
-      _cellHeldDown = true;
-      _animate();
-    }
-  }
-
-  /// 处理TapUp
-  void _handleTapUp(TapUpDetails event) {
-    if (_cellHeldDown) {
-      _cellHeldDown = false;
-      _animate();
-    }
-  }
-
-  /// 处理TapCancel
-  void _handleTapCancel() {
-    if (_cellHeldDown) {
-      _cellHeldDown = false;
-      _animate();
-    }
-  }
-
-  /// pressed动画实现
-  void _animate() {
-    if (_animationController?.isAnimating ?? true) {
-      return;
-    }
-    final bool wasHeldDown = _cellHeldDown;
-    final TickerFuture ticker = _cellHeldDown
-        ? _animationController!.animateTo(1.0, duration: kFadeOutDuration, curve: Curves.easeInOutCubicEmphasized)
-        : _animationController!.animateTo(0.0, duration: kFadeInDuration, curve: Curves.easeOutCubic);
-    ticker.then<void>((void value) {
-      if (mounted && wasHeldDown != _cellHeldDown) {
-        _animate();
-      }
-    });
+  @override
+  void dispose() {
+    _opacityController?.dispose();
+    _colorController?.dispose();
+    super.dispose();
   }
 }

@@ -19,7 +19,7 @@ typedef DecorationForSection = BoxDecoration? Function(
 typedef MarginForSection = EdgeInsets? Function(int section);
 typedef SelectRowAtIndexPath = void Function(IndexPath indexPath);
 typedef CanSelectRowAtIndexPath = bool Function(IndexPath indexPath);
-typedef DividerInTableView = Widget Function(BuildContext context);
+typedef DividerInTableView = Widget? Function(BuildContext context);
 
 /// CupertinoTableView代理类，提供数据源和定制UI
 class CupertinoTableViewDelegate {
