@@ -4,30 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import 'builder/table_view_item_builder.dart';
+import 'cupertino_table_view_config.dart';
 import '../delegate/cupertino_table_view_delegate.dart';
 import '../index_path/index_path.dart';
+import '../index_path/index_path_generator.dart';
 import '../refresh/refresh_config.dart';
 import '../refresh/refresh_controller.dart';
 import '../refresh/refresh_indicator.dart';
 import 'cupertino_table_view_cell.dart';
-
-class _TableViewConstants {
-  static const double defaultBorderWidth = 1.0;
-  static const Color defaultDividerColor = Color(0x00f7f7f7);
-  static const double defaultDividerIndent = 15.0;
-  static const double defaultDividerHeight = 1.0;
-
-  // Special row indices for headers and footers
-  static const int headerRowIndex = -1;
-  static const int footerRowIndex = -2;
-}
-
-enum CellType {
-  only,
-  first,
-  middle,
-  last,
-}
 
 class CupertinoTableView extends StatefulWidget {
   const CupertinoTableView({
@@ -76,21 +61,43 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   ScrollController get _effectiveScrollController =>
       widget.scrollController ?? _fallbackScrollController ?? PrimaryScrollController.maybeOf(context)!;
 
+  IndexPathGenerator? _indexPathGenerator;
+  TableViewItemBuilder? _tableViewItemBuilder;
+
   @override
   void initState() {
     super.initState();
     _initScrollController();
     _addListener();
     _calculateHeight();
+    _initIndexPathAndCellBuilders();
+  }
+
+  @override
+  void didUpdateWidget(covariant CupertinoTableView oldWidget) {
+    if (oldWidget.delegate != widget.delegate) {
+      _initIndexPathAndCellBuilders();
+    }
+    super.didUpdateWidget(oldWidget);
   }
 
   @override
   void dispose() {
     _removeListener();
     _disposeScrollController();
-
     widget.refreshConfig?.dispose();
     super.dispose();
+  }
+
+  _initIndexPathAndCellBuilders() {
+    _indexPathGenerator = IndexPathGenerator(widget.delegate);
+    _tableViewItemBuilder = TableViewItemBuilder(
+      delegate: widget.delegate,
+      cellBuilder: CellBuilder(
+        buildCell: (indexPath) => _buildCell(indexPath),
+        buildDivider: (section) => _buildDivider(section),
+      ),
+    );
   }
 
   /// 是否设置了需要refresh功能
@@ -102,94 +109,75 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
     return refreshConfig.enablePullUp || refreshConfig.enablePullDown;
   }
 
-  bool get enableDivider {
-    return widget.delegate.dividerInTableView?.call(context) != null;
-  }
+  bool get _enableDivider => widget.delegate.dividerInTableView?.call(context) != null;
 
   @override
   Widget build(BuildContext context) {
     if (!enableRefresh && widget.onScroll == null && widget.scrollController == null) {
-      return _buildSimpleContainer();
+      return _buildSimpleList();
     }
 
-    return _buildScrollableContainer();
+    return _buildCustomScrollView();
   }
 
-  /// Builds a simple container with ListView when refresh is not needed
-  Widget _buildSimpleContainer() {
+  Widget _buildSimpleList() {
+    final indexPaths = _indexPathGenerator?.generate(enableDivider: _enableDivider) ?? [];
+
     return Container(
       color: widget.backgroundColor,
       margin: widget.margin,
-      child: _buildSimpleList(),
+      child: ListView.builder(
+        padding: widget.padding,
+        physics: widget.physics,
+        itemCount: indexPaths.length,
+        itemBuilder: (context, index) {
+          return _tableViewItemBuilder?.buildItem(context, indexPaths[index]);
+        },
+      ),
     );
   }
 
-  /// Builds a scrollable container with refresh functionality
-  Widget _buildScrollableContainer() {
+  Widget _buildCustomScrollView() {
     final refreshConfig = widget.refreshConfig;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Stack(
-          children: <Widget>[
-            Positioned(
-              top: (refreshConfig?.enablePullDown == true) ? -_headerHeight : 0,
-              bottom: (refreshConfig?.enablePullUp == true) ? -_footerHeight : 0,
-              left: 0,
-              right: 0,
-              child: NotificationListener<ScrollNotification>(
-                onNotification: _dispatchScrollEvent,
-                child: Container(
-                  margin: widget.margin,
-                  color: widget.backgroundColor,
-                  child: _buildCustomScrollView(refreshConfig),
-                ),
+    return Stack(
+      children: <Widget>[
+        Positioned(
+          top: (refreshConfig?.enablePullDown ?? false) ? -_headerHeight : 0,
+          bottom: (refreshConfig?.enablePullUp ?? false) ? -_footerHeight : 0,
+          left: 0,
+          right: 0,
+          child: NotificationListener<ScrollNotification>(
+            onNotification: _dispatchScrollEvent,
+            child: Container(
+              margin: widget.margin,
+              color: widget.backgroundColor,
+              child: CustomScrollView(
+                primary: widget.primaryScrollController,
+                physics: widget.physics,
+                controller: (widget.primaryScrollController == true) ? null : _effectiveScrollController,
+                slivers: [
+                  if (refreshConfig?.enablePullDown ?? false) SliverToBoxAdapter(child: _buildRefreshHeader(refreshConfig!)),
+                  _buildSliverList(),
+                  if (refreshConfig?.enablePullUp ?? false) SliverToBoxAdapter(child: _buildRefreshFooter(refreshConfig!)),
+                ],
               ),
             ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Builds the CustomScrollView with slivers
-  Widget _buildCustomScrollView(RefreshConfig? refreshConfig) {
-    return CustomScrollView(
-      primary: widget.primaryScrollController,
-      physics: widget.physics,
-      controller: (widget.primaryScrollController == true) ? null : _effectiveScrollController,
-      slivers: [
-        if (refreshConfig?.enablePullDown == true) SliverToBoxAdapter(child: _buildRefreshHeader(refreshConfig!)),
-        _buildSliverList(),
-        if (refreshConfig?.enablePullUp == true) SliverToBoxAdapter(child: _buildRefreshFooter(refreshConfig!)),
+          ),
+        ),
       ],
     );
   }
 
-  /// Builds a simple ListView for basic use cases
-  Widget _buildSimpleList() {
-    final indexPaths = _generateIndexPaths();
-
-    return ListView.builder(
-      padding: widget.padding,
-      physics: widget.physics,
-      itemCount: indexPaths.length,
-      itemBuilder: (context, index) {
-        return _buildListItem(indexPaths[index]);
-      },
-    );
-  }
-
-  /// Builds a SliverList for use in CustomScrollView
   Widget _buildSliverList() {
-    final indexPaths = _generateIndexPaths();
+    final indexPaths = _indexPathGenerator?.generate(enableDivider: _enableDivider) ?? [];
 
     return SliverPadding(
       padding: widget.padding ?? EdgeInsets.zero,
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            return _buildListItem(indexPaths[index]);
+            return _tableViewItemBuilder?.buildItem(context, indexPaths[index]);
           },
           childCount: indexPaths.length,
         ),
@@ -197,85 +185,24 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
     );
   }
 
-  /// Generates all index paths for the table view
-  List<IndexPath> _generateIndexPaths() {
-    final result = <IndexPath>[];
-    final sectionCount = _getSectionCount();
-
-    for (int section = 0; section < sectionCount; section++) {
-      // Add section header
-      result.add(IndexPath(section: section, row: _TableViewConstants.headerRowIndex));
-
-      // Add cells and dividers
-      final rowCount = _getRowCount(section);
-      if (enableDivider && rowCount > 0) {
-        // Add cells with dividers between them
-        for (int row = 0; row < rowCount; row++) {
-          result.add(IndexPath(section: section, row: row));
-          if (row < rowCount - 1) {
-            // Add divider (using negative row index to distinguish)
-            result.add(IndexPath(section: section, row: -(row + 10))); // Unique negative index for dividers
-          }
-        }
-      } else {
-        // Add cells without dividers
-        for (int row = 0; row < rowCount; row++) {
-          result.add(IndexPath(section: section, row: row));
-        }
-      }
-
-      // Add section footer
-      result.add(IndexPath(section: section, row: _TableViewConstants.footerRowIndex));
-    }
-
-    return result;
-  }
-
-  /// Builds an individual list item based on the index path
-  Widget _buildListItem(IndexPath indexPath) {
-    final row = indexPath.row;
-
-    // Handle special row types
-    if (row == _TableViewConstants.headerRowIndex) {
-      return _buildSectionHeader(indexPath.section);
-    } else if (row == _TableViewConstants.footerRowIndex) {
-      return _buildSectionFooter(indexPath.section);
-    } else if (row < 0) {
-      // Divider row (negative index)
-      return _buildDivider(indexPath.section);
-    } else {
-      // Regular cell
-      return _buildCell(indexPath);
-    }
-  }
-
-  int _getSectionCount() {
-    return widget.delegate.numberOfSectionsInTableView();
-  }
-
-  int _getRowCount(int section) {
-    return widget.delegate.numberOfRowsInSection?.call(section) ?? 0;
-  }
-
   /// 构建单个cell
   Widget _buildCell(IndexPath indexPath) {
     final section = indexPath.section;
-    final rowCount = _getRowCount(section);
+    final rowCount = widget.delegate.numberOfRowsInSection?.call(section) ?? 0;
 
     if (rowCount <= 0) {
       return const SizedBox.shrink();
     }
 
-    final decoration = _getCellDecoration(section);
     final cellType = _determineCellType(indexPath.row, rowCount);
 
     return Container(
       clipBehavior: Clip.hardEdge,
       margin: _calculateCellMargin(cellType, section),
-      decoration: decoration.copyWith(
+      decoration: BoxDecoration(
         color: widget.backgroundColor ?? Colors.transparent,
-        border: _getBorder(),
-        borderRadius: _calculateBorderRadius(cellType),
+        border: _cellBorder,
+        borderRadius: _calculateCellRadius(cellType)
       ),
       child: _buildCellContent(indexPath),
     );
@@ -283,15 +210,14 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
 
   Widget _buildCellContent(IndexPath indexPath) {
     return CupertinoTableViewCell(
+      onTap: _onTapHandler(indexPath),
       pressedOpacity: widget.delegate.pressedOpacity,
-      onTap: _createTapHandler(indexPath),
       pressedColor: widget.pressedColor ?? Colors.transparent,
       builder: (context) => widget.delegate.cellForRowAtIndexPath(context, indexPath),
     );
   }
 
-  /// Creates a tap handler for a cell
-  VoidCallback? _createTapHandler(IndexPath indexPath) {
+  VoidCallback? _onTapHandler(IndexPath indexPath) {
     final canSelect = widget.delegate.canSelectRowAtIndexPath?.call(indexPath) ?? false;
     if (!canSelect || widget.delegate.didSelectRowAtIndexPath == null) {
       return null;
@@ -299,86 +225,18 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
     return () => widget.delegate.didSelectRowAtIndexPath?.call(indexPath);
   }
 
-  /// Gets the decoration for a section
-  BoxDecoration _getCellDecoration(int section) {
-    return widget.delegate.decorationForSection?.call(context, section) ?? const BoxDecoration();
-  }
-
-  /// Determines the type of cell based on its position
-  CellType _determineCellType(int rowIndex, int totalRows) {
-    if (totalRows == 1) return CellType.only;
-    if (rowIndex == 0) return CellType.first;
-    if (rowIndex == totalRows - 1) return CellType.last;
-    return CellType.middle;
-  }
-
-  /// Calculates margin for a cell based on its type
-  EdgeInsets? _calculateCellMargin(CellType cellType, int section) {
-    final baseMargin = widget.delegate.marginForSection?.call(section) ?? EdgeInsets.zero;
-
-    switch (cellType) {
-      case CellType.only:
-        return baseMargin;
-      case CellType.first:
-        return baseMargin.copyWith(bottom: 0);
-      case CellType.last:
-        return baseMargin.copyWith(top: 0);
-      case CellType.middle:
-        return baseMargin.copyWith(top: 0, bottom: 0);
-    }
-  }
-
-  /// Calculates border radius for a cell based on its type
-  BorderRadiusGeometry? _calculateBorderRadius(CellType cellType) {
-    final radius = widget.roundCornerBorderRadius;
-    if (radius == null) return BorderRadius.zero;
-
-    switch (cellType) {
-      case CellType.only:
-        return BorderRadius.circular(radius);
-      case CellType.first:
-        return BorderRadius.vertical(top: Radius.circular(radius));
-      case CellType.last:
-        return BorderRadius.vertical(bottom: Radius.circular(radius));
-      case CellType.middle:
-        return BorderRadius.zero;
-    }
-  }
-
-  /// Gets the default border for cells
-  BoxBorder? _getBorder() {
-    if (!(widget.hasDefaultBorder ?? false)) return null;
-
-    final color = widget.backgroundColor ?? Colors.transparent;
-    return Border.all(
-      color: color,
-      width: _TableViewConstants.defaultBorderWidth,
-      strokeAlign: BorderSide.strokeAlignOutside,
-    );
-  }
-
-  /// 构建section header
-  Widget _buildSectionHeader(int section) {
-    return widget.delegate.headerInSection?.call(context, section) ?? const SizedBox.shrink();
-  }
-
-  /// 构建section footer
-  Widget _buildSectionFooter(int section) {
-    return widget.delegate.footerInSection?.call(context, section) ?? const SizedBox.shrink();
-  }
-
-  Widget _buildDivider(section) {
+  Widget _buildDivider(int section) {
     final sectionMargin = widget.delegate.marginForSection?.call(section) ?? EdgeInsets.zero;
 
     return Container(
       margin: EdgeInsets.only(left: sectionMargin.left, right: sectionMargin.right),
       child: widget.delegate.dividerInTableView?.call(context) ??
           const Divider(
-            height: _TableViewConstants.defaultDividerHeight,
-            thickness: _TableViewConstants.defaultDividerHeight,
-            indent: _TableViewConstants.defaultDividerIndent,
-            endIndent: _TableViewConstants.defaultDividerIndent,
-            color: _TableViewConstants.defaultDividerColor,
+            height: TableViewConfig.defaultDividerHeight,
+            thickness: TableViewConfig.defaultDividerHeight,
+            indent: TableViewConfig.defaultDividerIndent,
+            endIndent: TableViewConfig.defaultDividerIndent,
+            color: TableViewConfig.defaultDividerColor,
           ),
     );
   }
@@ -426,11 +284,15 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
 
   /// 销毁ScrollController，在state dispose中调用
   void _disposeScrollController() {
-    if (widget.scrollController != null) {
-      widget.scrollController!.dispose();
-    } else {
-      _fallbackScrollController?.dispose();
-      _fallbackScrollController = null;
+    try {
+      if (widget.scrollController != null) {
+        widget.scrollController!.dispose();
+      } else {
+        _fallbackScrollController?.dispose();
+        _fallbackScrollController = null;
+      }
+    } catch (err) {
+      debugPrint('CupertinoTableView dispose scrollController error: $err');
     }
   }
 
@@ -684,5 +546,62 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
   /// 滚动到某个offset
   Future<void> animateTo(double offset, {required Duration duration, required Curve curve}) {
     return _effectiveScrollController.animateTo(offset, duration: duration, curve: curve);
+  }
+}
+
+enum CellType { only, first, middle, last }
+
+extension on _CupertinoTableViewState {
+  /// Determines the type of cell based on its position
+  CellType _determineCellType(int rowIndex, int totalRows) {
+    if (totalRows == 1) return CellType.only;
+    if (rowIndex == 0) return CellType.first;
+    if (rowIndex == totalRows - 1) return CellType.last;
+    return CellType.middle;
+  }
+
+  /// Calculates margin for a cell based on its type
+  EdgeInsets? _calculateCellMargin(CellType cellType, int section) {
+    final baseMargin = widget.delegate.marginForSection?.call(section) ?? EdgeInsets.zero;
+
+    switch (cellType) {
+      case CellType.only:
+        return baseMargin;
+      case CellType.first:
+        return baseMargin.copyWith(bottom: 0);
+      case CellType.last:
+        return baseMargin.copyWith(top: 0);
+      case CellType.middle:
+        return baseMargin.copyWith(top: 0, bottom: 0);
+    }
+  }
+
+  /// Calculates border radius for a cell based on its type
+  BorderRadiusGeometry? _calculateCellRadius(CellType cellType) {
+    final radius = widget.roundCornerBorderRadius;
+    if (radius == null) return BorderRadius.zero;
+
+    switch (cellType) {
+      case CellType.only:
+        return BorderRadius.circular(radius);
+      case CellType.first:
+        return BorderRadius.vertical(top: Radius.circular(radius));
+      case CellType.last:
+        return BorderRadius.vertical(bottom: Radius.circular(radius));
+      case CellType.middle:
+        return BorderRadius.zero;
+    }
+  }
+
+  /// Gets the default border for cells
+  BoxBorder? get _cellBorder {
+    if (!(widget.hasDefaultBorder ?? false)) return null;
+
+    final color = widget.backgroundColor ?? Colors.transparent;
+    return Border.all(
+      color: color,
+      width: TableViewConfig.defaultBorderWidth,
+      strokeAlign: BorderSide.strokeAlignOutside,
+    );
   }
 }
