@@ -137,10 +137,12 @@ class _CupertinoTableViewCellState extends State<CupertinoTableViewCell> with Ti
       child: _enablePressedAnimation && _opacityAnimation != null
           ? AnimatedBuilder(
               animation: Listenable.merge([_colorAnimation, _opacityAnimation]),
-              builder: (_, child) => Container(
-                color: _colorAnimation?.value,
-                child: Opacity(opacity: _opacityAnimation!.value, child: child),
-              ),
+              builder: (_, child) {
+                return Container(
+                  color: _colorAnimation?.value,
+                  child: Opacity(opacity: _opacityAnimation!.value, child: child),
+                );
+              },
               child: widget.builder(context),
             )
           : widget.builder(context),

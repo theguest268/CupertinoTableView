@@ -29,6 +29,7 @@ class CupertinoTableView extends StatefulWidget {
     this.hasDefaultBorder,
     this.backgroundColor,
     this.pressedColor,
+    this.shinkWrap,
   });
 
   final CupertinoTableViewDelegate delegate;
@@ -43,6 +44,7 @@ class CupertinoTableView extends StatefulWidget {
   final bool? hasDefaultBorder;
   final Color? backgroundColor;
   final Color? pressedColor;
+  final bool? shinkWrap;
 
   @override
   State<CupertinoTableView> createState() => _CupertinoTableViewState();
@@ -129,6 +131,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
       child: ListView.builder(
         padding: widget.padding,
         physics: widget.physics,
+        shrinkWrap: widget.shinkWrap ?? false,
         itemCount: indexPaths.length,
         itemBuilder: (context, index) {
           return _tableViewItemBuilder?.buildItem(context, indexPaths[index]);
@@ -197,13 +200,12 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
     final cellType = _determineCellType(indexPath.row, rowCount);
 
     return Container(
-      clipBehavior: Clip.hardEdge,
+      clipBehavior: Clip.antiAliasWithSaveLayer,
       margin: _calculateCellMargin(cellType, section),
       decoration: BoxDecoration(
-        color: widget.backgroundColor ?? Colors.transparent,
-        border: _cellBorder,
-        borderRadius: _calculateCellRadius(cellType)
-      ),
+          color: widget.backgroundColor ?? Colors.transparent,
+          border: _calculateCellBorder(cellType),
+          borderRadius: _calculateCellRadius(cellType)),
       child: _buildCellContent(indexPath),
     );
   }
@@ -594,14 +596,25 @@ extension on _CupertinoTableViewState {
   }
 
   /// Gets the default border for cells
-  BoxBorder? get _cellBorder {
+  BoxBorder? _calculateCellBorder(CellType cellType) {
     if (!(widget.hasDefaultBorder ?? false)) return null;
 
     final color = widget.backgroundColor ?? Colors.transparent;
-    return Border.all(
+
+    final side = BorderSide(
       color: color,
       width: TableViewConfig.defaultBorderWidth,
-      strokeAlign: BorderSide.strokeAlignOutside,
     );
+
+    switch (cellType) {
+      case CellType.only:
+        return Border.all(color: color, width: TableViewConfig.defaultBorderWidth);
+      case CellType.first:
+        return Border(top: side, left: side, right: side);
+      case CellType.last:
+        return Border(bottom: side, left: side, right: side);
+      case CellType.middle:
+        return Border(left: side, right: side);
+    }
   }
 }
