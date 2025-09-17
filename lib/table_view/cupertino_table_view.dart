@@ -88,6 +88,8 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
     _removeListener();
     _disposeScrollController();
     widget.refreshConfig?.dispose();
+    _indexPathGenerator = null;
+    _tableViewItemBuilder = null;
     super.dispose();
   }
 
@@ -198,24 +200,23 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
     }
 
     final cellType = _determineCellType(indexPath.row, rowCount);
+    final borderRadius = _calculateCellRadius(cellType);
 
     return Container(
       clipBehavior: Clip.antiAliasWithSaveLayer,
       margin: _calculateCellMargin(cellType, section),
       decoration: BoxDecoration(
-          color: widget.backgroundColor ?? Colors.transparent,
-          border: _calculateCellBorder(cellType),
-          borderRadius: _calculateCellRadius(cellType)),
-      child: _buildCellContent(indexPath),
-    );
-  }
-
-  Widget _buildCellContent(IndexPath indexPath) {
-    return CupertinoTableViewCell(
-      onTap: _onTapHandler(indexPath),
-      pressedOpacity: widget.delegate.pressedOpacity,
-      pressedColor: widget.pressedColor ?? Colors.transparent,
-      builder: (context) => widget.delegate.cellForRowAtIndexPath(context, indexPath),
+        color: widget.backgroundColor ?? Colors.transparent,
+        border: _calculateCellBorder(cellType),
+        borderRadius: borderRadius,
+      ),
+      child: CupertinoTableViewCell(
+        onTap: _onTapHandler(indexPath),
+        pressedOpacity: widget.delegate.pressedOpacity,
+        pressedColor: widget.pressedColor ?? Colors.transparent,
+        builder: (context) => widget.delegate.cellForRowAtIndexPath(context, indexPath),
+        borderRadius: borderRadius,
+      ),
     );
   }
 
@@ -579,7 +580,7 @@ extension on _CupertinoTableViewState {
   }
 
   /// Calculates border radius for a cell based on its type
-  BorderRadiusGeometry? _calculateCellRadius(CellType cellType) {
+  BorderRadius? _calculateCellRadius(CellType cellType) {
     final radius = widget.roundCornerBorderRadius;
     if (radius == null) return BorderRadius.zero;
 

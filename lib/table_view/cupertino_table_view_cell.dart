@@ -8,6 +8,7 @@ class CupertinoTableViewCell extends StatefulWidget {
     this.hitBehavior,
     this.onTap,
     this.pressedColor = const Color(0x00000000),
+    this.borderRadius,
   });
 
   final WidgetBuilder builder;
@@ -15,6 +16,7 @@ class CupertinoTableViewCell extends StatefulWidget {
   final VoidCallback? onTap;
   final double? pressedOpacity;
   final Color pressedColor;
+  final BorderRadius? borderRadius;
 
   @override
   State<CupertinoTableViewCell> createState() => _CupertinoTableViewCellState();
@@ -139,7 +141,10 @@ class _CupertinoTableViewCellState extends State<CupertinoTableViewCell> with Ti
               animation: Listenable.merge([_colorAnimation, _opacityAnimation]),
               builder: (_, child) {
                 return Container(
-                  color: _colorAnimation?.value,
+                  decoration: BoxDecoration(
+                    color: _colorAnimation?.value,
+                    borderRadius: widget.borderRadius,
+                  ),
                   child: Opacity(opacity: _opacityAnimation!.value, child: child),
                 );
               },
