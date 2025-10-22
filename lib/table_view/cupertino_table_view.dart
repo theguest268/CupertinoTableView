@@ -201,15 +201,17 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
 
     final cellType = _determineCellType(indexPath.row, rowCount);
     final borderRadius = _calculateCellRadius(cellType);
+    final border = _calculateCellBorder(cellType);
 
     return Container(
       clipBehavior: Clip.antiAliasWithSaveLayer,
       margin: _calculateCellMargin(cellType, section),
       decoration: BoxDecoration(
         color: widget.backgroundColor ?? Colors.transparent,
-        border: _calculateCellBorder(cellType),
+        border: border,
         borderRadius: borderRadius,
       ),
+      foregroundDecoration: BoxDecoration(border: border, borderRadius: borderRadius),
       child: CupertinoTableViewCell(
         onTap: _onTapHandler(indexPath),
         pressedOpacity: widget.delegate.pressedOpacity,
