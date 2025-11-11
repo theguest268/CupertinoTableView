@@ -200,7 +200,7 @@ class _CupertinoTableViewState extends State<CupertinoTableView> {
     }
 
     final cellType = _determineCellType(indexPath.row, rowCount);
-    final borderRadius = _calculateCellRadius(cellType);
+    final borderRadius = _calculateCellRadius(cellType, indexPath.section);
     final border = _calculateCellBorder(cellType);
 
     return Container(
@@ -582,9 +582,14 @@ extension on _CupertinoTableViewState {
   }
 
   /// Calculates border radius for a cell based on its type
-  BorderRadius? _calculateCellRadius(CellType cellType) {
+  BorderRadius? _calculateCellRadius(CellType cellType, int section) {
     final radius = widget.roundCornerBorderRadius;
     if (radius == null) return BorderRadius.zero;
+
+    final borderRadiusForSection = widget.delegate.borderRadiusForSection?.call(section);
+    if (borderRadiusForSection != null) {
+      return borderRadiusForSection;
+    }
 
     switch (cellType) {
       case CellType.only:
