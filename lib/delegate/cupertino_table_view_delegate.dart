@@ -20,6 +20,7 @@ typedef MarginForSection = EdgeInsets? Function(int section);
 typedef SelectRowAtIndexPath = void Function(IndexPath indexPath);
 typedef CanSelectRowAtIndexPath = bool Function(IndexPath indexPath);
 typedef DividerInTableView = Widget? Function(BuildContext context);
+typedef BorderRadiusForSection = BorderRadius? Function(int section);
 
 /// CupertinoTableView代理类，提供数据源和定制UI
 class CupertinoTableViewDelegate {
@@ -36,6 +37,7 @@ class CupertinoTableViewDelegate {
     this.hitBehaviorAtIndexPath,
     this.dividerInTableView,
     this.pressedOpacity,
+    this.borderRadiusForSection,
   });
 
   NumberOfSectionsInTableView numberOfSectionsInTableView;
@@ -50,4 +52,5 @@ class CupertinoTableViewDelegate {
   HitTestBehavior? hitBehaviorAtIndexPath;
   DividerInTableView? dividerInTableView;
   double? pressedOpacity;
+  BorderRadiusForSection? borderRadiusForSection;
 }
